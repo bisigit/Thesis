@@ -1,0 +1,209 @@
+#### Process for downloading and analysing GSE193123 ####
+
+
+
+
+## Downloading files from NCBI
+# Create a .txt file and 
+nano srr_ids.txt
+
+# Type out all the SRR numbers in the file
+*#!/bin/bash 
+SRR_IDS=("SRR17455712" "SRR17455713" "SRR17455714" "SRR17455715" "SRR17455716" "SRR17455717")
+
+# Copy content of srr_ids.txt into a new file
+nano download_sra.sh
+
+#make file executable
+chmod +x
+$ #!/bin/bash
+
+# Specify the output directory for downloaded files
+OUTPUT_DIR="./sra_files"
+
+# Create the output directory if it doesn't exist
+mkdir -p "$OUTPUT_DIR"
+
+# List the SRR IDs directly in an array
+SRR_IDS=("SRR17455712" "SRR17455713" "SRR17455714" "SRR17455715" "SRR17455716" "SRR17455717")
+
+# Loop through each SRR ID in the array and download with prefetch
+for SRR_ID in "${SRR_IDS[@]}"; do
+    echo "Downloading $SRR_ID..."
+    prefetch -v --max-connection 10 --max-size 100G --output-directory "$OUTPUT_DIR" "$SRR_ID"
+done
+
+# f any issues are encountered, test the file type (it should say bash script executable or something similar)
+file download_sra.sh 
+
+    #To ensure files are running in unix format, try
+    dos2unix or sed -i 's/\r//' download_sra.sh
+
+# Execute script to download
+./download_sra.sh
+
+
+
+
+## Moving .sra files to one directory for easy access
+
+# Execute bash
+#!/bin/bash
+#Note to self: If you like, you can save the following in a script and then make it executable.#
+
+# Define root directory for .sra files
+root_dir="home/biem/thesis/gse193123/sra_files"
+
+# Define the destination directory
+dest_dir="/home/biem/thesis/gse193123"
+
+# Create destinantion directory 
+$ mkdir -p /home/biem/thesis/gse193123/sra_files_destination
+
+# Find and move all .sra files to the destination directory
+find "$root_dir" -type f -name "*.sra" -exec mv {} "$dest_dir" \;
+
+# Get feedback
+echo "All.sra files have been moved to dest_dir"
+
+
+
+
+## Converting all the .sra files in the directory to fastq format and compressing them
+$ for FILE in /home/biem/thesis/gse193123/sra_files_destination/*.sra; do
+    fastq-dump --split-files --gzip "$FILE"
+done
+
+## fastQC and multiQC on raw reads
+# Create directory  for fastQC results
+mkdir -p fastqc_results
+
+# Run fastQC
+fastqc -o fastqc_results *fastq.gz
+
+# Create directory for multiQC resulys
+mkdir -p multiqc_results
+
+# Run multiQC
+multiqc fastqc_results -o multiqc_results
+
+
+
+
+## Trimming to remove reads containing adapter, poly-N and low-quality reads
+# Create directory to store results
+mkdir -p trimmed_files
+
+# Run trimmomatic to trim reads 
+for FILE in *_1.fastq.gz; do  
+  BASENAME=$(basename "$FILE" _1.fastq.gz)
+  echo "Processing $BASENAME"  
+  trimmomatic PE -phred33 \
+    "${BASENAME}_1.fastq.gz" "${BASENAME}_2.fastq.gz" \
+    "trimmed_files/${BASENAME}_forward_paired.fastq.gz" \
+    "trimmed_files/${BASENAME}_forward_unpaired.fastq.gz" \
+    "trimmed_files/${BASENAME}_reverse_paired.fastq.gz" \
+    "trimmed_files/${BASENAME}_reverse_unpaired.fastq.gz" \
+    ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 \
+    LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
+done
+
+# Run fastQC
+fastqc -o trimmed_fastqc_results -t 4 trimmed_files/*.fastq.gz
+
+# Run multiqc
+multiqc -o trimmed_multiqc_results trimmed_fastqc_results/
+
+############################go lower on trimming. use trim galore ################################
+
+
+
+
+## Building the reference genome - Could use for other human datasets of the same build in future
+# create working directory
+mkdir -p ref_genome && cd genome
+
+# Download reference genome and annotation files and enable resumption
+wget -c ftp://ftp.ensembl.org/pub/release-109/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+wget -c ftp://ftp.ensembl.org/pub/release-109/gtf/homo_sapiens/Homo_sapiens.GRCh38.109.gtf.gz
+
+# Decompress the downloaded genomes
+[ -f Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz ] && gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+[ -f Homo_sapiens.GRCh38.109.gtf.gz ] && gunzip Homo_sapiens.GRCh38.109.gtf.gz
+
+# Build Hisat2 index with logging
+hisat2-build Homo_sapiens.GRCh38.dna.primary_assembly.fa genome_index 2>&1 | tee hisat2_index.log
+
+# Exit directory
+cd ..
+
+
+
+
+
+## Aligning 
+# Create an output directory for alignments
+mkdir -p aligned_reads
+
+# Aligning all samples in a Loop
+for FILE in trimmed_files/*_forward_paired.fastq.gz; do
+  BASENAME=$(basename "$FILE" _forward_paired.fastq.gz)  
+  echo "Aligning $BASENAME..."
+
+  # Run Hisat2 for each sample
+  hisat2 -p 4 -x genome/genome_index \
+         -1 "trimmed_files/${BASENAME}_forward_paired.fastq.gz" \
+         -2 "trimmed_files/${BASENAME}_reverse_paired.fastq.gz" \
+         -S "aligned_reads/${BASENAME}.sam"
+
+done
+
+##### add known splice sites in hisat2, needs genome and gtl file annotation, use going forward ###########
+
+## Converting from SAM to BAM 
+# Create directory for BAM files
+mkdir -p sorted_bam
+
+# Convert and sort each sample's SAM file
+for SAM in aligned_reads/*.sam; do
+  BASENAME=$(basename "$SAM" .sam)
+  echo "Converting and sorting $BASENAME..."
+  
+  # Convert and sort in a single step (avoids intermediate BAM file)
+  samtools view -u "$SAM" | samtools sort -@ 4 -o "sorted_bam/${BASENAME}_sorted.bam"
+
+  # Index the BAM file (useful for IGV or other tools)
+  samtools index "sorted_bam/${BASENAME}_sorted.bam"
+
+  # Remove the original SAM file to save space
+  rm "$SAM"
+done
+
+
+
+# Running post-alignment QC
+# Create output directories if they don't exist
+mkdir -p samtools_stats qualimap_reports
+
+# Loop through all sorted BAM files in the directory
+for BAM in sorted_bam/*_sorted.bam; do  
+    BASENAME=$(basename "$BAM" _sorted.bam)  
+
+    # Generate Samtools alignment statistics and save output
+    samtools flagstat "$BAM" > "samtools_stats/${BASENAME}_alignment_stats.txt"
+
+    # Run Qualimap QC for each sample and save reports in a dedicated folder
+    qualimap bamqc -bam "$BAM" -outdir "qualimap_reports/${BASENAME}_qualimap"
+done
+
+
+# Generate count matrix for all BAM files in sorted_bam/
+featureCounts -a /home/biem/thesis/gse193123/sra_files_destination/genome/Homo_sapiens.GRCh38.109.gtf \
+              -o gene_counts.txt \
+              -T 4 \
+              -p \
+              -t exon \
+              -g gene_id \
+              sorted_bam/*_sorted.bam
+
+###### feature counts as is not the best, get a tool that allows to guess strand length based on strand length. feature counts strand####
