@@ -1,0 +1,106 @@
+# Process for downloading and analysing GSE193123 ####
+
+
+# Downloading files from NCBI
+# 1. Create file with accessions needed to download them 
+nano srr_ids.txt
+
+# Type out all the SRR numbers in the file
+*#!/bin/bash 
+SRR_IDS=("SRR17455712" "SRR17455713" "SRR17455714" "SRR17455715" "SRR17455716" "SRR17455717")
+
+# Copy content of srr_ids.txt into a new file
+nano download_sra.sh
+
+# make file executable
+chmod +x download_sra.sh
+$ #!/bin/bash
+
+
+# 2. Create the output directory if it doesn't exist
+mkdir -p "$OUTPUT_DIR"
+
+# Specify the output directory for downloaded files
+OUTPUT_DIR="./sra_files"
+
+
+# 3. If you don't have Aspera, install it as prefetch needs it. Download it from:
+https://www.ibm.com/products/aspera/downloads#cds
+
+# 4. List the SRR IDs directly in an array
+SRR_IDS=("SRR3986322" "SRR3986317" "SRR3986331" "SRR3986334" "SRR3986323" "SRR3986324" "SRR3986330" "SRR3986321" "SRR3986335" "SRR3986319" "SRR3986365" "SRR3986368" "SRR3986358" "SRR3986341" "SRR3986352" "SRR3986340" "SRR3986347" "SRR3986364" "SRR3986344" "SRR3986339")
+
+# Loop through each SRR ID in the array and download with prefetch
+for SRR_ID in "${SRR_IDS[@]}"; do
+    echo "Downloading $SRR_ID..."
+    prefetch -v --max-size 100G --output-directory "$OUTPUT_DIR" "$SRR_ID"
+done
+
+
+# 4. Moving .sra files to one directory for easy access
+# Define root directory for .sra files
+root_dir="/home/biem/thesis/rnasamples/sra_files"
+
+# Define the destination directory
+dest_dir="/home/biem/thesis/rnasamples/files_destination"
+
+# Create destinantion directory 
+mkdir -p "$dest_dir"
+
+# Find and move all .sra files to the destination directory
+find "$root_dir" -type f -name "*.sra" -exec mv {} "$dest_dir" \;
+
+# Get feedback
+echo "All.sra files have been moved to dest_dir"
+
+
+# 5. Convert all the .sra files in the directory to fastq format and compress them
+for FILE in /home/biem/thesis/rnasamples/files_destination/*.sra; do
+    fastq-dump --split-files --gzip "$FILE"
+done
+
+
+# 6. Run fastqc and multiqc
+# Create directory  for fastQC results
+mkdir -p fastqc_results
+
+# Run fastQC
+fastqc -o fastqc_results *fastq.gz
+
+# Run multiQC
+multiqc fastqc_results -o multiqc_results
+
+
+& 7. Trimming with Trim Galore!
+# Create directory to store results
+mkdir -p trimmed_files
+
+# Create a script
+nano trim_galore_script.sh
+
+# Paste
+#!/bin/bash
+set -e  # Exit if any command fails
+
+mkdir -p trimmed_files
+
+for FILE in *_1.fastq.gz; do
+    BASENAME=$(basename "$FILE" _1.fastq.gz)
+    echo "Processing $BASENAME"
+
+    if trim_galore --paired --fastqc -q 20 --gzip -o trimmed_files \
+        "${BASENAME}_1.fastq.gz" "${BASENAME}_2.fastq.gz"; then
+        echo "Successfully trimmed $BASENAME"
+    else
+        echo "Error: Trim Galore failed for $BASENAME" >&2
+        exit 1  # Stop the script on failure
+    fi
+done
+
+echo "Finished processing all files."
+
+# Make the script executable
+chmod +x trim_galore_script.sh
+
+# Execute the script
+bash trim_galore_script.sh
