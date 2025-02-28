@@ -2,6 +2,7 @@
 
 
 Workflow
+
   A. RNA
 1. pick samples -
 2. download RNA reads and process them completely following code
