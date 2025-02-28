@@ -4,8 +4,8 @@
 Workflow
 
   A. RNA
-1. pick samples -
-2. download RNA reads and process them completely following code
+1. pick samples - DONE
+2. download RNA reads and process them completely following code - IN PROGRESS
 3. run DGE
 4. visualize with heatmap
 5. enrichment analysis
