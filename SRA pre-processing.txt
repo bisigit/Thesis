@@ -136,7 +136,7 @@ mkdir -p aligned_reads hisat2_splice_sites
 hisat2_extract_splice_sites.py genome/Homo_sapiens.GRCh38.109.gtf > hisat2_splice_sites/splice_sites.txt
 hisat2_extract_exons.py genome/Homo_sapiens.GRCh38.109.gtf > hisat2_splice_sites/exons.txt
 
-# Step 3: Align reads using HISAT2 with known splice sites and @RG tags
+# Step 3: Align reads using HISAT2 with known splice sites and @RG tags    *****IMPORTANT: HISAT2 mapping should include strandness option "fr-firststrand" 
 for FILE in trimmed_files/*_val_1.fq.gz; do
   BASENAME=$(basename "$FILE" _1_val_1.fq.gz)  
   echo "Aligning $BASENAME with splice sites..."
