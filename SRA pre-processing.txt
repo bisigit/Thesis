@@ -142,16 +142,20 @@ hisat2_extract_exons.py ref_genome/Homo_sapiens.GRCh38.109.gtf > hisat2_splice_s
 
 # Step 3: Align reads using HISAT2 with known splice sites and @RG tags    *****IMPORTANT: HISAT2 mapping should include strandness option "fr-firststrand" (done)
 for FILE in trimmed_files/*_val_1.fq.gz; do
-  BASENAME=$(basename "$FILE" _1_val_1.fq.gz)  
+  BASENAME=$(basename "$FILE" _1_val_1.fq.gz)
   echo "Aligning $BASENAME with splice sites..."
 
   hisat2 -p 4 -x ref_genome/genome_index \
          --rna-strandness RF \
          --known-splicesite-infile /home/biem/thesis/rnasamples/files_destination/ref_genome/hisat2_splice_sites/splice_sites.txt \
-         --rg-line "@RG\tID:$BASENAME\tSM:$BASENAME\tLB:lib1\tPL:ILLUMINA\tPU:unit1" \
          -1 "trimmed_files/${BASENAME}_1_val_1.fq.gz" \
          -2 "trimmed_files/${BASENAME}_2_val_2.fq.gz" \
          -S "aligned_reads/${BASENAME}.sam"
+
+  samtools addreplacerg \
+    -r "@RG\tID:${BASENAME}\tSM:${BASENAME}\tLB:lib1\tPL:ILLUMINA\tPU:unit1" \
+    -o "aligned_reads/${BASENAME}_rg.sam" \
+    "aligned_reads/${BASENAME}.sam"
 
 done
 
