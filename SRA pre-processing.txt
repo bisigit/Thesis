@@ -42,6 +42,8 @@ done
 # Check downloaded files 
 vdb-validate "$OUTPUT_DIR" 
 
+
+
 # 4. Moving .sra files to one directory for easy access
 # Define root directory for .sra files
 root_dir="/home/biem/thesis/rnasamples/sra_files"
