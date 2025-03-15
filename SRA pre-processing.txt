@@ -19,11 +19,12 @@ chmod +x download_sra.sh
 $ #!/bin/bash
 
 
-# 2. Create the output directory if it doesn't exist
+# 2. # Specify the output directory for downloaded files
+OUTPUT_DIR="./sra_files"
+
+Create the output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
-# Specify the output directory for downloaded files
-OUTPUT_DIR="./sra_files"
 
 
 # 3. If you don't have Aspera, install it as prefetch needs it. Download it from:
