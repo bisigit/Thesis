@@ -22,7 +22,7 @@ $ #!/bin/bash
 # 2. # Specify the output directory for downloaded files
 OUTPUT_DIR="./sra_files"
 
-Create the output directory if it doesn't exist
+Create the output directory 
 mkdir -p "$OUTPUT_DIR"
 
 
