@@ -27,7 +27,7 @@ mkdir -p "$OUTPUT_DIR"
 
 
 
-# 3. If you don't have Aspera, install it as prefetch needs it. Download it from:
+# 3. If you don't have Aspera, install it as prefetch needs it. Download it from:  ---- I didn't use it. Didn't download. 
 https://www.ibm.com/products/aspera/downloads#cds
 
 # 4. List the SRR IDs directly in an array
