@@ -157,8 +157,8 @@ for FILE in trimmed_files/*_val_1.fq.gz; do
     -o "aligned_reads/${BASENAME}_rg.sam" \
     "aligned_reads/${BASENAME}.sam"
 
-  # Remove the original .sam file after adding read groups
-  rm "aligned_reads/${BASENAME}.sam"
+  # Force remove the .sam file without prompt
+  \rm "aligned_reads/${BASENAME}.sam"
 
 done
 
