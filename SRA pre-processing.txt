@@ -178,7 +178,7 @@ for SAM in aligned_reads/*.sam; do
   samtools index "sorted_bam/${BASENAME}_sorted.bam"
 
   # Remove the original SAM file to save space
-  rm "$SAM"
+  \rm "$SAM"
 done
 
 
