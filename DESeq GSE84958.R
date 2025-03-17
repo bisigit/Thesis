@@ -228,3 +228,21 @@ legend("topright",
        title="Diagnosis",
        border=FALSE)
 dev.off()
+
+
+
+
+
+## Saving Results of DGE to use for GO and KEGG
+# Convert DESeq2 results to a dataframe
+res_df <- as.data.frame(res)  
+
+# Preserve gene IDs
+res_df$GeneID <- rownames(res_df) 
+
+# Remove Gene_ID column
+rownames(res_df) <- NULL  
+
+# Saving the results in .csv
+write.csv(res_df, file = "dge_results_unfiltered.csv", row.names = FALSE)
+
