@@ -215,10 +215,4 @@ featureCounts -a /home/biem/thesis/rnasamples/files_destination/ref_genome/Homo_
               -g gene_id \
               -s 2 \
               sorted_bam/*_sorted.bam
-####results are poor. Trying with htseq
-
-# 13. Generate count matric for all BAM files in sorted_bam/ [with htseq]
-for bam in sorted_bam/*_sorted.bam; do
-    sample_name=$(basename "$bam" _sorted.bam)  # Extract sample name
-    htseq-count -f bam -s reverse "$bam" /home/biem/thesis/rnasamples/files_destination/ref_genome/Homo_sapiens.GRCh38.109.gtf > "counts_${sample_name}.txt"
-done
+##Some of the alignments were as low as 2% but I will see what my DGE results are like. 
