@@ -1,4 +1,4 @@
-# Process for downloading and analysing GSE193123 ####
+# Process for downloading and analysing GSE84958 ####
 
 
 # Downloading files from NCBI
