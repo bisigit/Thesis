@@ -209,8 +209,8 @@ write.csv(annotated_dmps, "annotated_dmp_results.csv", row.names = TRUE)
 
 
 
-
-########################## Exploratory Analysis ###################################
+-Obsolete since DMA worked after incorporating covariates-
+########################## Exploratory Analysis ###################################  
 # 1. Plot Heatmap of top 500 most variable genes
 # Reconvert to beta values
 beta_vis <- 2^m_imputed / (2^m_imputed + 1)
