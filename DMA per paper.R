@@ -114,7 +114,7 @@ dmp_results <- topTable(fit, coef = "groupPCOS", number = Inf, adjust = "BH")   
 
 # Filter results based on padj and log2foldchange parameters
 res_sig <- 
-  dmp_results[which(dmp_results$adj.P.Val < 0.05 & abs(dmp_results$logFC) > 0.263),]
+  dmp_results[which(dmp_results$adj.P.Val < 0.05 & abs(dmp_results$logFC) > 1),]
 
 # Add a column that indicates up and downregulated genes
 res_sig$direction <- ifelse(res_sig$logFC > 0, "Up", "Down")
